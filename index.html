@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>JavaScriptによるSpleeter実装</title>
+  <!-- <link rel="stylesheet" href="/JavaScriptによるSpleeter実装_files/normalize.css"> -->
+  <!-- <link rel="stylesheet" href="/JavaScriptによるSpleeter実装_files/skeleton.css"> -->
+  <link rel="stylesheet" href="/JavaScriptによるSpleeter実装_files/custom.css">
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <h3>JavaScriptによるSpleeter実装</h3>
+    </div>
+
+    <div class="row">
+      <h4>1. モデルを選択</h4>
+    </div>
+    <div class="row">
+      <p class="four columns">
+        <label class="button large-text u-full-width">
+          <input type="radio" name="modelType" value="2" checked>
+          <span class="label-body">2 stems</span>
+        </label>
+         ボーカル、伴奏
+      </p>
+      <p class="four columns">
+        <label class="button large-text u-full-width">
+          <input type="radio" name="modelType" value="4">
+          <span class="label-body">4 stems</span>
+        </label>
+         ボーカル、ベース、ドラム、その他
+      </p>
+      <p class="four columns">
+        <label class="button large-text u-full-width">
+          <input type="radio" name="modelType" value="5">
+          <span class="label-body">5 stems</span>
+        </label><br>
+        ボーカル、ベース、ドラム、ピアノ、その他
+      </p>
+    </div>
+
+    <div class="row">
+      <h4>2. 対象の楽曲を選択</h4>
+    </div>
+    <div class="row">
+      <input type="file" accept="audio/*" id="audioFile" class="button u-full-width">
+    </div>
+
+    <div class="row">
+      <h4>3. 音源分離の実行</h4>
+      <p>ボタンを押すと最大100MB程度のファイルをダウンロードします。</p>
+    </div>
+    <div class="row">
+      <button class="large-text bold-text button-primary u-full-width" id="btnConvert">音源分離を実行する</button>
+    </div>
+
+    <div class="row">
+      <h5>処理実行状況</h5>
+      <p class="u-full-width status" id="info">.</p>
+    </div>
+
+    <div class="row">
+      <h4>4. 音源分離結果</h4>
+    </div>
+    <div class="row" id="resultProcessing">
+      <p>処理が完了するまでお待ちください。</p>
+    </div>
+    <div class="row row-hide" id="resultCompleted1">
+      <p class="four columns">Original<br><audio id="audioOriginal" controls controlslist="nodownload"></audio></p>
+      <p class="four columns" id="paraStem1">
+        <span id="spLabelStem1"></span><br><audio id="audioStem1" controls controlslist="nodownload"></audio><br>
+        <span id="spDownloadStem1"><a class="button u-full-width" id="linkDownloadStem1">ダウンロード</a></span>
+      </p>
+      <p class="four columns" id="paraStem2">
+        <span id="spLabelStem2"></span><br><audio id="audioStem2" controls controlslist="nodownload"></audio><br>
+        <span id="spDownloadStem2"><a class="button u-full-width" id="linkDownloadStem2">ダウンロード</a></span>
+      </p>
+    </div>
+    <div class="row row-hide" id="resultCompleted2">
+      <p class="four columns" id="paraStem3">
+        <span id="spLabelStem3"></span><br><audio id="audioStem3" controls controlslist="nodownload"></audio><br>
+        <span id="spDownloadStem3"><a class="button u-full-width" id="linkDownloadStem3">ダウンロード</a></span>
+      </p>
+      <p class="four columns" id="paraStem4">
+        <span id="spLabelStem4"></span><br><audio id="audioStem4" controls controlslist="nodownload"></audio><br>
+        <span id="spDownloadStem4"><a class="button u-full-width" id="linkDownloadStem4">ダウンロード</a></span>
+      </p>
+      <p class="four columns" id="paraStem5">
+        <span id="spLabelStem5"></span><br><audio id="audioStem5" controls controlslist="nodownload"></audio><br>
+        <span id="spDownloadStem5"><a class="button u-full-width" id="linkDownloadStem5">ダウンロード</a></span>
+      </p>
+    </div>
+
+    <div id="controlPanel">
+      <button id="playAllButton">Play All</button>
+      <input type="range" id="timelineSlider" min="0" max="100" value="0">
+      <span id="currentTime">0:00</span> / <span id="totalTime">0:00</span>
+    </div>
+    <div id="waveformCanvas"></div>
+    <!-- 注意事項とライセンス情報は省略 -->
+
+  </div>
+  <script src="/JavaScriptによるSpleeter実装_files/tf.min.js"></script>
+  <script src="/JavaScriptによるSpleeter実装_files/stft.js"></script>
+  <script src="/JavaScriptによるSpleeter実装_files/script.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+</body>
+</html>
