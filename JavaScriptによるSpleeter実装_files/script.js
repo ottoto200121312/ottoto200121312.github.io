@@ -551,7 +551,6 @@ window.onerror = function(msg, url, line, col, error) {
 
 
 // <<p5
-
 let waveforms = [];
 let audioContexts = [];
 let analyserNodes = [];
@@ -562,6 +561,12 @@ let timelineSlider;
 let currentTimeSpan;
 let totalTimeSpan;
 let duration = 0;
+let drumPeaks = [];
+let drumLagDuration = 5; // フレーム数でラグの長さを指定
+let pianoNotes = [];
+let pianoDelay = 2; // ピアノのディレイフレーム数
+
+
 
 function setupP5(p) {
   let canvas = p.createCanvas(800, 400);
@@ -656,7 +661,9 @@ function formatTime(time) {
 }
 
 function drawP5(p) {
-  p.background(0);
+  p.background(240);
+  
+  const stemLabels = getStemLabels(aud.stems);
   
   for (let i = 0; i < analyserNodes.length; i++) {
     let y = i * p.height / analyserNodes.length;
@@ -667,25 +674,127 @@ function drawP5(p) {
     let dataArray = new Uint8Array(bufferLength);
     analyserNodes[i].getByteTimeDomainData(dataArray);
     
-    // 波形を描画
-    p.stroke(255);
+    p.stroke(0);
     p.noFill();
-    p.beginShape();
-    for (let j = 0; j < bufferLength; j++) {
-      let x = p.map(j, 0, bufferLength, 0, p.width);
-      let v = p.map(dataArray[j], 0, 255, 0, h);
-      p.vertex(x, y + v);
+    
+    if (stemLabels[i].toLowerCase() === 'drums') {
+      // ドラムの処理（前回のコードと同じ）
+      p.beginShape();
+      let isPeak = false;
+      let peakValue = 0;
+      let peakIndex = 0;
+      
+      for (let j = 0; j < bufferLength; j++) {
+        let x = p.map(j, 0, bufferLength, 0, p.width);
+        let v = p.map(dataArray[j], 0, 255, 0, h);
+        
+        if (v > h/2 + h/4 && v > peakValue) {
+          isPeak = true;
+          peakValue = v;
+          peakIndex = j;
+        }
+        
+        if (isPeak && j > peakIndex + 5) {
+          isPeak = false;
+          drumPeaks.push({x: x, y: y + peakValue, frame: p.frameCount});
+        }
+        
+        p.vertex(x, y + v);
+      }
+      p.endShape();
+      
+      p.fill(255, 0, 0);
+      p.noStroke();
+      for (let k = drumPeaks.length - 1; k >= 0; k--) {
+        let peak = drumPeaks[k];
+        let age = p.frameCount - peak.frame;
+        if (age < drumLagDuration) {
+          p.ellipse(peak.x, peak.y, 10, 10);
+        } else {
+          drumPeaks.splice(k, 1);
+        }
+      }
+    } else if (stemLabels[i].toLowerCase() === 'bass') {
+      // ベースの処理（前回のコードと同じ）
+      p.beginShape(p.LINES);
+      for (let j = 0; j < bufferLength; j += 2) {
+        let x1 = p.map(j, 0, bufferLength, 0, p.width);
+        let x2 = p.map(j + 1, 0, bufferLength, 0, p.width);
+        let v = p.map(dataArray[j], 0, 255, 0, h);
+        p.vertex(x1, y + h/2);
+        p.vertex(x1, y + v);
+        p.vertex(x1, y + v);
+        p.vertex(x2, y + v);
+        p.vertex(x2, y + v);
+        p.vertex(x2, y + h/2);
+      }
+      p.endShape();
+    } else if (stemLabels[i].toLowerCase() === 'piano') {
+      // ピアノの処理
+      drawPianoStaff(p, y, h, dataArray, bufferLength);
+    } else {
+      // その他のステムは通常の波形を描画
+      p.beginShape();
+      for (let j = 0; j < bufferLength; j++) {
+        let x = p.map(j, 0, bufferLength, 0, p.width);
+        let v = p.map(dataArray[j], 0, 255, 0, h);
+        p.vertex(x, y + v);
+      }
+      p.endShape();
     }
-    p.endShape();
     
     // ステムラベルを表示
-    p.fill(255);
+    p.fill(0);
     p.noStroke();
     p.textAlign(p.LEFT, p.TOP);
-    p.text(getStemLabels(aud.stems)[i], 10, y + 10);
+    p.text(stemLabels[i], 10, y + 10);
   }
   // タイムラインマーカーを描画
   let markerX = p.map(timelineSlider.value, 0, duration, 0, p.width);
   p.stroke(255, 0, 0);
   p.line(markerX, 0, markerX, p.height);
 }
+
+function drawPianoStaff(p, y, h, dataArray, bufferLength) {
+  // 五線譜を描画
+  p.stroke(0);
+  for (let i = 0; i < 5; i++) {
+    let lineY = y + h * (0.3 + i * 0.1);
+    p.line(0, lineY, p.width, lineY);
+  }
+  
+  // ピアノの音符を描画
+  for (let j = 0; j < bufferLength; j += 10) {
+    let x = p.map(j, 0, bufferLength, 0, p.width);
+    let v = p.map(dataArray[j], 0, 255, 0, h);
+    if (v > h/2) {
+      let noteY = y + h * (1 - v/h);
+      pianoNotes.push({x: x, y: noteY, frame: p.frameCount});
+    }
+  }
+  
+  // 音符とディレイを描画
+  p.noStroke();
+  for (let k = pianoNotes.length - 1; k >= 0; k--) {
+    let note = pianoNotes[k];
+    let age = p.frameCount - note.frame;
+    if (age < pianoDelay) {
+      // メイン音符（四角形）
+      p.fill(0);
+      p.rect(note.x, note.y - 4, 6, 8);
+      
+      // ディレイエフェクト（薄くなる四角形）
+      // for (let d = 1; d <= 2; d++) {
+      //   let delayAlpha = p.map(d, 1, 2, 150, 50);
+      //   p.fill(0, delayAlpha);
+      //   p.rect(note.x - d * 8, note.y - 4, 6, 8);
+      // }
+    } else {
+      pianoNotes.splice(k, 1);
+    }
+  }
+}
+
+
+
+
